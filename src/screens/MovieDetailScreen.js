@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import des services et utilitaires
 import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
-import { STORAGE_KEYS, isMovieInList, addMovieToList, removeMovieFromList } from '../services/storageService';
+import storageService, { isMovieInList, addMovieToList, removeMovieFromList } from '../services/storageService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,15 +53,15 @@ const MovieDetailScreen = ({ route, navigation }) => {
   const checkMovieStatus = async () => {
     try {
       // Vérification pour les favoris
-      const favStatus = await isMovieInList(STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
+      const favStatus = await isMovieInList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
       setIsFavorite(favStatus);
       
       // Vérification pour les films vus
-      const watchedStatus = await isMovieInList(STORAGE_KEYS.WATCHED_MOVIES, movie.id);
+      const watchedStatus = await isMovieInList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
       setIsWatched(watchedStatus);
       
       // Vérification pour la watchlist
-      const watchlistStatus = await isMovieInList(STORAGE_KEYS.WATCHLIST, movie.id);
+      const watchlistStatus = await isMovieInList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
       setIsInWatchlist(watchlistStatus);
     } catch (error) {
       console.error('Erreur lors de la vérification du statut du film:', error);
@@ -74,9 +74,9 @@ const MovieDetailScreen = ({ route, navigation }) => {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        await removeMovieFromList(STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
+        await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
       } else {
-        await addMovieToList(STORAGE_KEYS.FAVORITE_MOVIES, movie);
+        await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie);
       }
       setIsFavorite(!isFavorite);
     } catch (error) {
@@ -90,12 +90,12 @@ const MovieDetailScreen = ({ route, navigation }) => {
   const toggleWatched = async () => {
     try {
       if (isWatched) {
-        await removeMovieFromList(STORAGE_KEYS.WATCHED_MOVIES, movie.id);
+        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
       } else {
-        await addMovieToList(STORAGE_KEYS.WATCHED_MOVIES, movie);
+        await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
         // Si on marque comme vu, on retire de la watchlist
         if (isInWatchlist) {
-          await removeMovieFromList(STORAGE_KEYS.WATCHLIST, movie.id);
+          await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
           setIsInWatchlist(false);
         }
       }
@@ -111,9 +111,9 @@ const MovieDetailScreen = ({ route, navigation }) => {
   const toggleWatchlist = async () => {
     try {
       if (isInWatchlist) {
-        await removeMovieFromList(STORAGE_KEYS.WATCHLIST, movie.id);
+        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
       } else {
-        await addMovieToList(STORAGE_KEYS.WATCHLIST, movie);
+        await addMovieToList(storageService.STORAGE_KEYS.WATCHLIST, movie);
       }
       setIsInWatchlist(!isInWatchlist);
     } catch (error) {
