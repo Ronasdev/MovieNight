@@ -29,7 +29,7 @@ import Header from '../components/Header';
 import { COLORS, SIZES, FONTS } from '../utils/theme';
 
 // Services de stockage
-import { STORAGE_KEYS, getData, saveUserSettings, getUserSettings } from '../services/storageService';
+import storageService, { getData, saveUserSettings, getUserSettings } from '../services/storageService';
 
 const ProfileScreen = () => {
   // États pour les données de profil et préférences
@@ -54,9 +54,9 @@ const ProfileScreen = () => {
   const loadUserData = async () => {
     try {
       // Récupération de toutes les listes
-      const watched = await getData(STORAGE_KEYS.WATCHED_MOVIES) || [];
-      const favorites = await getData(STORAGE_KEYS.FAVORITE_MOVIES) || [];
-      const watchlist = await getData(STORAGE_KEYS.WATCHLIST) || [];
+      const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
+      const favorites = await getData(storageService.STORAGE_KEYS.FAVORITE_MOVIES) || [];
+      const watchlist = await getData(storageService.STORAGE_KEYS.WATCHLIST) || [];
       
       // Mise à jour des statistiques
       setStats({

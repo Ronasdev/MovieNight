@@ -31,7 +31,7 @@ import Header from '../components/Header';
 import { COLORS, SIZES, FONTS } from '../utils/theme';
 
 // Service de stockage
-import { STORAGE_KEYS, getData, removeMovieFromList, addMovieToList } from '../services/storageService';
+import storageService, { getData, removeMovieFromList, addMovieToList } from '../services/storageService';
 
 // Hook personnalisé pour AsyncStorage
 import useAsyncStorage from '../hooks/useAsyncStorage';
@@ -39,18 +39,21 @@ import useAsyncStorage from '../hooks/useAsyncStorage';
 const WatchlistScreen = ({ navigation }) => {
   // Utilisation de notre hook personnalisé pour gérer la liste des films à voir
   const [watchlist, setWatchlist, loading, error, refreshData] = 
-    useAsyncStorage(STORAGE_KEYS.WATCHLIST, []);
+    useAsyncStorage(storageService.STORAGE_KEYS.WATCHLIST, []);
   
   // État pour suivre les films déjà vus
   const [watchedMovies, setWatchedMovies] = useState([]);
   
+  // Utilisation de useEffect pour charger les films vus une fois au montage du composant
+  useEffect(() => {
+    loadWatchedMovies();
+  }, []);
+  
   // Utilisation de useFocusEffect pour rafraîchir les données quand l'écran devient actif
   useFocusEffect(
     React.useCallback(() => {
-      // Rechargement des données à chaque fois que l'écran est affiché
-      refreshData();
-      loadWatchedMovies();
-      
+      // On ne recharge pas automatiquement via refreshData() pour éviter la boucle infinie
+      // Le hook useAsyncStorage se charge déjà de charger les données au montage
       return () => {
         // Fonction de nettoyage si nécessaire
       };
@@ -62,7 +65,7 @@ const WatchlistScreen = ({ navigation }) => {
    */
   const loadWatchedMovies = async () => {
     try {
-      const watched = await getData(STORAGE_KEYS.WATCHED_MOVIES) || [];
+      const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
       setWatchedMovies(watched);
     } catch (error) {
       console.error('Erreur lors du chargement des films vus:', error);
@@ -74,7 +77,7 @@ const WatchlistScreen = ({ navigation }) => {
    */
   const handleRemoveFromWatchlist = async (movieId) => {
     try {
-      await removeMovieFromList(STORAGE_KEYS.WATCHLIST, movieId);
+      await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movieId);
       // Mise à jour de l'état local
       setWatchlist(prevList => prevList.filter(movie => movie.id !== movieId));
     } catch (error) {
@@ -88,10 +91,10 @@ const WatchlistScreen = ({ navigation }) => {
   const handleMarkAsWatched = async (movie) => {
     try {
       // Ajout à la liste des films vus
-      await addMovieToList(STORAGE_KEYS.WATCHED_MOVIES, movie);
+      await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
       
       // Retrait de la watchlist
-      await removeMovieFromList(STORAGE_KEYS.WATCHLIST, movie.id);
+      await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
       
       // Mise à jour des états locaux
       setWatchedMovies(prev => [...prev, movie]);

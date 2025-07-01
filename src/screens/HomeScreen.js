@@ -32,7 +32,7 @@ import Header from '../components/Header';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
 
 // Stockage
-import { STORAGE_KEYS, isMovieInList, addMovieToList, removeMovieFromList } from '../services/storageService';
+import storageService, { isMovieInList, addMovieToList, removeMovieFromList, getData } from '../services/storageService';
 
 // Données de démonstration pour le tutoriel (normalement, ces données viendraient d'une API comme TMDB)
 import mockMovies from '../utils/mockData';
@@ -67,8 +67,8 @@ const HomeScreen = ({ navigation }) => {
     try {
       // Vous pourriez utiliser le hook useAsyncStorage ici dans une application réelle
       // Mais pour la simplicité du tutoriel, nous utilisons directement les fonctions
-      const favs = await isMovieInList(STORAGE_KEYS.FAVORITE_MOVIES) || [];
-      const watched = await isMovieInList(STORAGE_KEYS.WATCHED_MOVIES) || [];
+      const favs = await getData(storageService.STORAGE_KEYS.FAVORITE_MOVIES) || [];
+      const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
       
       setFavorites(favs);
       setWatchedMovies(watched);
@@ -89,10 +89,10 @@ const HomeScreen = ({ navigation }) => {
       const isFavorite = favorites.some(fav => fav.id === movie.id);
       
       if (isFavorite) {
-        await removeMovieFromList(STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
+        await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
         setFavorites(prev => prev.filter(m => m.id !== movie.id));
       } else {
-        await addMovieToList(STORAGE_KEYS.FAVORITE_MOVIES, movie);
+        await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie);
         setFavorites(prev => [...prev, movie]);
       }
     } catch (error) {
@@ -106,10 +106,10 @@ const HomeScreen = ({ navigation }) => {
       const isWatched = watchedMovies.some(m => m.id === movie.id);
       
       if (isWatched) {
-        await removeMovieFromList(STORAGE_KEYS.WATCHED_MOVIES, movie.id);
+        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
         setWatchedMovies(prev => prev.filter(m => m.id !== movie.id));
       } else {
-        await addMovieToList(STORAGE_KEYS.WATCHED_MOVIES, movie);
+        await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
         setWatchedMovies(prev => [...prev, movie]);
       }
     } catch (error) {

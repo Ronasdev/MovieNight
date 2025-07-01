@@ -33,12 +33,12 @@ import { COLORS, SIZES, FONTS } from '../utils/theme';
 import useAsyncStorage from '../hooks/useAsyncStorage';
 
 // Service de stockage
-import { STORAGE_KEYS, removeMovieFromList } from '../services/storageService';
+import storageService, { removeMovieFromList } from '../services/storageService';
 
 const FavoritesScreen = ({ navigation }) => {
   // Utilisation de notre hook personnalisé pour gérer la liste des films favoris
   const [favorites, setFavorites, loading, error, refreshData] = 
-    useAsyncStorage(STORAGE_KEYS.FAVORITE_MOVIES, []);
+    useAsyncStorage(storageService.STORAGE_KEYS.FAVORITE_MOVIES, []);
   
   // Utilisation de useFocusEffect pour rafraîchir les données quand l'écran devient actif
   useFocusEffect(
@@ -57,7 +57,7 @@ const FavoritesScreen = ({ navigation }) => {
    */
   const handleRemoveFromFavorites = async (movieId) => {
     try {
-      await removeMovieFromList(STORAGE_KEYS.FAVORITE_MOVIES, movieId);
+      await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movieId);
       // Mise à jour de l'état local
       setFavorites(prevList => prevList.filter(movie => movie.id !== movieId));
     } catch (error) {

@@ -10,7 +10,7 @@
  * Ce hook est central pour la démonstration d'AsyncStorage dans le tutoriel.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
@@ -33,24 +33,34 @@ const useAsyncStorage = (key, initialValue = null) => {
   /**
    * Fonction d'initialisation pour récupérer les données depuis AsyncStorage
    */
+  // On utilise useRef pour stocker les valeurs sans déclencher de re-rendu
+  const keyRef = React.useRef(key);
+  const initialValueRef = React.useRef(initialValue);
+  
+  // Mettre à jour les refs si les props changent
+  useEffect(() => {
+    keyRef.current = key;
+    initialValueRef.current = initialValue;
+  }, [key, initialValue]);
+  
   const initializeStorage = useCallback(async () => {
     try {
       setLoading(true);
-      // Récupération des données depuis AsyncStorage
-      const item = await AsyncStorage.getItem(key);
+      // Récupération des données depuis AsyncStorage en utilisant la ref
+      const item = await AsyncStorage.getItem(keyRef.current);
       
       // Si des données existent, les parser et les stocker dans l'état local
       // Sinon, utiliser la valeur initiale fournie
-      const value = item ? JSON.parse(item) : initialValue;
+      const value = item ? JSON.parse(item) : initialValueRef.current;
       setStoredValue(value);
       setError(null);
     } catch (e) {
-      console.error(`Erreur lors de la récupération de la clé ${key}:`, e);
+      console.error(`Erreur lors de la récupération de la clé ${keyRef.current}:`, e);
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, [key, initialValue]);
+  }, []);
 
   // Chargement initial des données au montage du composant
   useEffect(() => {
@@ -70,13 +80,13 @@ const useAsyncStorage = (key, initialValue = null) => {
       // Mise à jour de l'état local
       setStoredValue(valueToStore);
       
-      // Mise à jour d'AsyncStorage
-      await AsyncStorage.setItem(key, JSON.stringify(valueToStore));
+      // Mise à jour d'AsyncStorage en utilisant la ref
+      await AsyncStorage.setItem(keyRef.current, JSON.stringify(valueToStore));
     } catch (e) {
-      console.error(`Erreur lors de la mise à jour de la clé ${key}:`, e);
+      console.error(`Erreur lors de la mise à jour de la clé ${keyRef.current}:`, e);
       setError(e);
     }
-  }, [key, storedValue]);
+  }, [storedValue]);
 
   /**
    * Fonction pour forcer le rechargement des données depuis AsyncStorage
