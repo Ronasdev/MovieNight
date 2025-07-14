@@ -24,6 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -47,6 +48,8 @@ const MovieCard = ({
   isWatched = false,
   style = {}
 }) => {
+  // Utilisation du contexte de thème
+  const { isDarkMode, theme } = useTheme();
   // Calcul des étoiles basé sur la note du film (sur 10)
   const renderStars = () => {
     // Par défaut on suppose que la note est sur 10
@@ -147,12 +150,13 @@ const MovieCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+  // Styles dynamiques basés sur le thème actuel
+  const styles = React.useMemo(() => StyleSheet.create({
   container: {
     width: (width / 2) - (SIZES.medium * 1.5),
     height: 250,
     borderRadius: SIZES.borderRadius.medium,
-    backgroundColor: COLORS.card,
+    backgroundColor: isDarkMode ? COLORS.card : theme.cardColor,
     margin: SIZES.small / 2,
     overflow: 'hidden',
     ...SHADOWS.medium,
@@ -178,7 +182,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.subtitle,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.base / 2,
   },
   infoContainer: {
@@ -195,7 +199,7 @@ const styles = StyleSheet.create({
   },
   year: {
     ...FONTS.caption,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.textColor + '99',
   },
   actions: {
     position: 'absolute',
@@ -207,7 +211,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: SIZES.borderRadius.full,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: SIZES.base / 2,
@@ -215,6 +219,6 @@ const styles = StyleSheet.create({
   activeActionButton: {
     backgroundColor: 'rgba(46, 91, 255, 0.8)',
   },
-});
+}), [isDarkMode, theme]);
 
 export default MovieCard;

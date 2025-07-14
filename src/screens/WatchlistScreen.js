@@ -11,7 +11,7 @@
  * Cet écran démontre l'utilisation d'AsyncStorage pour stocker des listes persistantes.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,8 @@ import Header from '../components/Header';
 
 // Styles et utilitaires
 import { COLORS, SIZES, FONTS } from '../utils/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemedContainer from '../components/ThemedContainer';
 
 // Service de stockage
 import storageService, { getData, removeMovieFromList, addMovieToList } from '../services/storageService';
@@ -37,6 +39,8 @@ import storageService, { getData, removeMovieFromList, addMovieToList } from '..
 import useAsyncStorage from '../hooks/useAsyncStorage';
 
 const WatchlistScreen = ({ navigation }) => {
+  // Utilisation du contexte de thème
+  const { isDarkMode, theme } = useTheme();
   // Utilisation de notre hook personnalisé pour gérer la liste des films à voir
   const [watchlist, setWatchlist, loading, error, refreshData] = 
     useAsyncStorage(storageService.STORAGE_KEYS.WATCHLIST, []);
@@ -128,8 +132,11 @@ const WatchlistScreen = ({ navigation }) => {
     </View>
   );
 
+  // Création des styles dynamiques
+  const styles = React.useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+
   return (
-    <View style={styles.container}>
+    <ThemedContainer style={styles.container}>
       <Header title="À voir" />
       
       {loading ? (
@@ -163,14 +170,15 @@ const WatchlistScreen = ({ navigation }) => {
           ListEmptyComponent={renderEmptyComponent}
         />
       )}
-    </View>
+    </ThemedContainer>
   );
 };
 
-const styles = StyleSheet.create({
+// Fonction pour créer les styles en fonction du thème
+const createStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // Le backgroundColor est géré par ThemedContainer
   },
   loadingContainer: {
     flex: 1,
@@ -179,7 +187,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginTop: SIZES.small,
   },
   moviesGrid: {
@@ -198,14 +206,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     ...FONTS.h2,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginTop: SIZES.medium,
     marginBottom: SIZES.small,
     textAlign: 'center',
   },
   emptySubtitle: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     textAlign: 'center',
     marginBottom: SIZES.large,
   },
@@ -217,7 +225,7 @@ const styles = StyleSheet.create({
   },
   exploreButtonText: {
     ...FONTS.subtitle,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : '#FFFFFF',
   },
   movieCard: {
     marginBottom: SIZES.medium,

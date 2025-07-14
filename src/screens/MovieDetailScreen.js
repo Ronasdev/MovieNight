@@ -10,7 +10,7 @@
  * C'est un exemple parfait de Stack Navigation, accessible depuis plusieurs écrans.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -28,11 +28,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import des services et utilitaires
 import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemedContainer from '../components/ThemedContainer';
 import storageService, { isMovieInList, addMovieToList, removeMovieFromList } from '../services/storageService';
 
 const { width, height } = Dimensions.get('window');
 
 const MovieDetailScreen = ({ route, navigation }) => {
+  // Utilisation du contexte de thème
+  const { isDarkMode, theme } = useTheme();
   // Récupération du film passé en paramètre de navigation
   const { movie } = route.params;
   const insets = useSafeAreaInsets();
@@ -148,8 +152,11 @@ const MovieDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  // Création des styles dynamiques
+  const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+
   return (
-    <View style={styles.container}>
+    <ThemedContainer style={styles.container}>
       {/* Barre de statut transparente */}
       <StatusBar translucent backgroundColor="transparent" />
       
@@ -263,7 +270,7 @@ const MovieDetailScreen = ({ route, navigation }) => {
             <FontAwesome
               name={isWatched ? 'eye' : 'eye-slash'}
               size={22}
-              color={isWatched ? COLORS.primary : COLORS.text}
+              color={isWatched ? COLORS.primary : isDarkMode ? COLORS.text : theme.textColor}
             />
             <Text style={[
               styles.actionButtonText,
@@ -295,14 +302,15 @@ const MovieDetailScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </ThemedContainer>
   );
 };
 
-const styles = StyleSheet.create({
+// Fonction pour créer les styles en fonction du thème
+const createStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // Le backgroundColor est géré par ThemedContainer
   },
   scrollView: {
     flex: 1,
@@ -356,12 +364,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...FONTS.h2,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.base,
   },
   year: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginBottom: SIZES.base,
   },
   ratingContainer: {
@@ -371,7 +379,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginLeft: SIZES.small,
   },
   genresContainer: {
@@ -381,14 +389,14 @@ const styles = StyleSheet.create({
   genreBadge: {
     paddingHorizontal: SIZES.small,
     paddingVertical: SIZES.base / 2,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: isDarkMode ? COLORS.cardLight : theme.cardLightColor,
     borderRadius: SIZES.borderRadius.full,
     marginRight: SIZES.base,
     marginBottom: SIZES.base,
   },
   genreText: {
     ...FONTS.caption,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
   },
   section: {
     paddingHorizontal: SIZES.medium,
@@ -396,12 +404,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.small,
   },
   overview: {
     ...FONTS.body,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     lineHeight: 22,
   },
   actionButtonsContainer: {
@@ -413,13 +421,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SIZES.medium,
     paddingHorizontal: SIZES.medium,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: isDarkMode ? COLORS.cardLight : theme.cardLightColor,
     borderRadius: SIZES.borderRadius.medium,
     marginBottom: SIZES.medium,
   },
   actionButtonText: {
     ...FONTS.subtitle,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginLeft: SIZES.medium,
   },
 });

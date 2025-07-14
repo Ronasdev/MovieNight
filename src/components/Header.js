@@ -17,6 +17,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, SIZES, FONTS } from '../utils/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 /**
  * Composant Header - Barre d'en-tête personnalisable
@@ -36,8 +37,44 @@ const Header = ({
   onRightPress,
   style = {} 
 }) => {
+  // Utilisation du contexte de thème
+  const { isDarkMode, theme } = useTheme();
   // Utilisation de SafeAreaInsets pour adapter l'en-tête à l'encoche/barre d'état
   const insets = useSafeAreaInsets();
+  
+  // Styles dynamiques basés sur le thème actuel
+  const styles = React.useMemo(() => StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: 'transparent', // Le fond est géré par ThemedContainer
+      paddingBottom: SIZES.small,
+      paddingHorizontal: SIZES.medium,
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    },
+    leftContainer: {
+      width: 40,
+      alignItems: 'flex-start',
+    },
+    rightContainer: {
+      width: 40,
+      alignItems: 'flex-end',
+    },
+    title: {
+      ...FONTS.h3,
+      color: isDarkMode ? COLORS.text : theme.textColor,
+      textAlign: 'center',
+      flex: 1,
+    },
+    backButton: {
+      paddingVertical: SIZES.base,
+    },
+    rightButton: {
+      paddingVertical: SIZES.base,
+    },
+  }), [isDarkMode, theme]);
   
   return (
     <View style={[
@@ -53,7 +90,7 @@ const Header = ({
             onPress={onBackPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <FontAwesome name="chevron-left" size={18} color={COLORS.text} />
+            <FontAwesome name="chevron-left" size={18} color={isDarkMode ? COLORS.text : theme.textColor} />
           </TouchableOpacity>
         ) : <View style={{ width: 40 }} />}
       </View>
@@ -71,7 +108,7 @@ const Header = ({
             onPress={onRightPress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <FontAwesome name={rightIcon} size={18} color={COLORS.text} />
+            <FontAwesome name={rightIcon} size={18} color={isDarkMode ? COLORS.text : theme.textColor} />
           </TouchableOpacity>
         ) : <View style={{ width: 40 }} />}
       </View>
@@ -79,37 +116,6 @@ const Header = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.background,
-    paddingBottom: SIZES.small,
-    paddingHorizontal: SIZES.medium,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  leftContainer: {
-    width: 40,
-    alignItems: 'flex-start',
-  },
-  rightContainer: {
-    width: 40,
-    alignItems: 'flex-end',
-  },
-  title: {
-    ...FONTS.h3,
-    color: COLORS.text,
-    textAlign: 'center',
-    flex: 1,
-  },
-  backButton: {
-    paddingVertical: SIZES.base,
-  },
-  rightButton: {
-    paddingVertical: SIZES.base,
-  },
-});
+
 
 export default Header;

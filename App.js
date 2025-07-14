@@ -20,6 +20,9 @@ import AppNavigator from './src/navigation/AppNavigator';
 // Import des thèmes
 import { COLORS } from './src/utils/theme';
 
+// Import du contexte de thème
+import ThemeProvider from './src/contexts/ThemeContext';
+
 // Ignorer certains avertissements qui ne sont pas critiques
 LogBox.ignoreLogs([
   'Reanimated 2',
@@ -31,12 +34,14 @@ LogBox.ignoreLogs([
  */
 export default function App() {
   return (
-    <SafeAreaProvider>
-      {/* Configuration de la barre de statut */}
-      <StatusBar style="light" backgroundColor={COLORS.background} translucent />
-      
-      {/* Navigation principale de l'application */}
-      <AppNavigator />
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        {/* Configuration de la barre de statut */}
+        <StatusBar style="light" backgroundColor={COLORS.background} translucent />
+        
+        {/* Navigation principale de l'application */}
+        <AppNavigator />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

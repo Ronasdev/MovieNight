@@ -10,7 +10,7 @@
  * C'est l'écran principal de l'application.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,8 @@ import Header from '../components/Header';
 
 // Styles et utilitaires
 import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemedContainer from '../components/ThemedContainer';
 
 // Stockage
 import storageService, { isMovieInList, addMovieToList, removeMovieFromList, getData } from '../services/storageService';
@@ -38,6 +40,8 @@ import storageService, { isMovieInList, addMovieToList, removeMovieFromList, get
 import mockMovies from '../utils/mockData';
 
 const HomeScreen = ({ navigation }) => {
+  // Utilisation du contexte de thème
+  const { isDarkMode, theme } = useTheme();
   // États
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,8 +126,11 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('MovieDetail', { movie });
   };
 
+  // Création des styles dynamiques
+  const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <ThemedContainer style={[styles.container, { paddingTop: insets.top }]}>
       {/* En-tête avec barre de recherche */}
       <Header 
         title="Découvrir"
@@ -140,7 +147,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Barre de recherche (conditionnelle) */}
       {searchActive && (
         <View style={styles.searchContainer}>
-          <FontAwesome name="search" size={16} color={COLORS.textSecondary} />
+          <FontAwesome name="search" size={16} color={isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor} />
           <TextInput
             style={styles.searchInput}
             placeholder="Rechercher un film..."
@@ -191,19 +198,20 @@ const HomeScreen = ({ navigation }) => {
           )}
         </>
       )}
-    </View>
+    </ThemedContainer>
   );
 };
 
-const styles = StyleSheet.create({
+// Fonction pour créer les styles en fonction du thème
+const createStyles = (theme, isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // Le backgroundColor est géré par ThemedContainer
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: isDarkMode ? COLORS.card : theme.cardColor,
     borderRadius: SIZES.borderRadius.medium,
     marginHorizontal: SIZES.medium,
     marginVertical: SIZES.small,
@@ -213,7 +221,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginLeft: SIZES.small,
     fontSize: SIZES.font.body,
   },
@@ -228,7 +236,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginTop: SIZES.medium,
   },
   emptyContainer: {
@@ -238,7 +246,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     ...FONTS.subtitle,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginTop: SIZES.medium,
   },
 });

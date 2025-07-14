@@ -10,7 +10,8 @@
  * les préférences utilisateur entre les sessions.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -24,9 +25,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Composants personnalisés
 import Header from '../components/Header';
+import ThemedContainer from '../components/ThemedContainer';
 
-// Styles et utilitaires
+// Import des services et utilitaires
 import { COLORS, SIZES, FONTS } from '../utils/theme';
+
+// Import du contexte de thème
+import { useTheme } from '../contexts/ThemeContext';
 
 // Services de stockage
 import storageService, { getData, saveUserSettings, getUserSettings } from '../services/storageService';
@@ -39,14 +44,26 @@ const ProfileScreen = () => {
     watchlistCount: 0
   });
   
-  const [darkMode, setDarkMode] = useState(true);
+  // Utilisation du contexte de thème
+  const { isDarkMode, toggleTheme, theme } = useTheme();
   const insets = useSafeAreaInsets();
+  
+  // Générer les styles basés sur le thème actuel
+  const styles = React.useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
 
-  // Chargement des données au montage du composant
+  // Chargement initial des paramètres utilisateur
   useEffect(() => {
-    loadUserData();
     loadUserSettings();
   }, []);
+  
+  // Mise à jour des données à chaque fois que l'écran devient actif
+  useFocusEffect(
+    React.useCallback(() => {
+      // Rechargement des statistiques chaque fois que l'utilisateur revient sur l'écran
+      loadUserData();
+      return () => {};
+    }, [])
+  );
 
   /**
    * Chargement des données utilisateur depuis AsyncStorage
@@ -71,32 +88,24 @@ const ProfileScreen = () => {
   
   /**
    * Chargement des préférences utilisateur
+   * Note: Le chargement du thème est maintenant géré par ThemeContext
    */
   const loadUserSettings = async () => {
-    try {
-      const settings = await getUserSettings();
-      if (settings) {
-        setDarkMode(settings.darkMode);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des paramètres:', error);
-    }
+    // Plus besoin de charger les paramètres ici car c'est fait par ThemeContext
+    // Les autres paramètres utilisateur peuvent être chargés ici si besoin
   };
   
   /**
    * Gestion du changement de thème
    */
-  const handleThemeToggle = async (value) => {
-    setDarkMode(value);
-    try {
-      await saveUserSettings({ darkMode: value });
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des paramètres:', error);
-    }
+  const handleThemeToggle = (value) => {
+    // Utilise la fonction du contexte pour changer le thème
+    toggleTheme(value);
+    // La sauvegarde est maintenant gérée par ThemeContext
   };
 
   return (
-    <View style={styles.container}>
+    <ThemedContainer style={styles.container}>
       <Header title="Profil" />
       
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -107,7 +116,7 @@ const ProfileScreen = () => {
           <View style={styles.statsContainer}>
             {/* Nombre de films vus */}
             <View style={styles.statItem}>
-              <View style={[styles.statIconContainer, { backgroundColor: 'rgba(46, 91, 255, 0.15)' }]}>
+              <View style={[styles.statIconContainer, { backgroundColor: isDarkMode ? 'rgba(46, 91, 255, 0.15)' : 'rgba(46, 91, 255, 0.3)' }]}>
                 <FontAwesome name="eye" size={20} color={COLORS.primary} />
               </View>
               <Text style={styles.statValue}>{stats.watchedCount}</Text>
@@ -116,8 +125,8 @@ const ProfileScreen = () => {
             
             {/* Nombre de favoris */}
             <View style={styles.statItem}>
-              <View style={[styles.statIconContainer, { backgroundColor: 'rgba(255, 107, 107, 0.15)' }]}>
-                <FontAwesome name="heart" size={20} color={COLORS.secondary} />
+              <View style={[styles.statIconContainer, { backgroundColor: isDarkMode ? 'rgba(255, 107, 107, 0.15)' : 'rgba(255, 107, 107, 0.3)' }]}>
+                <FontAwesome name="heart" size={20} color={isDarkMode ? COLORS.secondary : '#ff6b6b'} />
               </View>
               <Text style={styles.statValue}>{stats.favoritesCount}</Text>
               <Text style={styles.statLabel}>Favoris</Text>
@@ -125,8 +134,8 @@ const ProfileScreen = () => {
             
             {/* Nombre dans la watchlist */}
             <View style={styles.statItem}>
-              <View style={[styles.statIconContainer, { backgroundColor: 'rgba(255, 193, 7, 0.15)' }]}>
-                <FontAwesome name="bookmark" size={20} color={COLORS.warning} />
+              <View style={[styles.statIconContainer, { backgroundColor: isDarkMode ? 'rgba(255, 193, 7, 0.15)' : 'rgba(255, 193, 7, 0.3)' }]}>
+                <FontAwesome name="bookmark" size={20} color={isDarkMode ? COLORS.warning : '#ffc107'} />
               </View>
               <Text style={styles.statValue}>{stats.watchlistCount}</Text>
               <Text style={styles.statLabel}>À voir</Text>
@@ -144,10 +153,10 @@ const ProfileScreen = () => {
               <Text style={styles.preferenceDescription}>Activer le thème sombre pour l'application</Text>
             </View>
             <Switch
-              value={darkMode}
+              value={isDarkMode}
               onValueChange={handleThemeToggle}
               trackColor={{ false: '#3e3e3e', true: 'rgba(46, 91, 255, 0.4)' }}
-              thumbColor={darkMode ? COLORS.primary : '#f4f3f4'}
+              thumbColor={isDarkMode ? COLORS.primary : '#f4f3f4'}
             />
           </View>
         </View>
@@ -163,20 +172,23 @@ const ProfileScreen = () => {
               Une application de gestion de films développée avec React Native et Expo.
               Cette application utilise AsyncStorage pour sauvegarder vos préférences et listes de films.
             </Text>
-            <Text style={styles.appAuthor}>
+            <Text style={[styles.appAuthor, {color: isDarkMode ? COLORS.primary : '#2e5bff'}]}>
               Développé par RonasDev pour YouTube
             </Text>
           </View>
         </View>
       </ScrollView>
-    </View>
+    </ThemedContainer>
   );
 };
 
-const styles = StyleSheet.create({
+// Les styles sont générés dynamiquement en fonction du thème
+const createStyles = (theme, isDarkMode) => {
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor est maintenant géré par ThemedContainer
   },
   contentContainer: {
     paddingHorizontal: SIZES.medium,
@@ -187,7 +199,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...FONTS.h3,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.medium,
   },
   statsContainer: {
@@ -206,21 +218,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SIZES.small,
+    // Le fond reste inchangé car il a un style inline dans le rendu
   },
   statValue: {
     ...FONTS.h2,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.base / 2,
   },
   statLabel: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
   },
   preferenceItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.card,
+    backgroundColor: isDarkMode ? COLORS.card : theme.cardColor,
     paddingHorizontal: SIZES.medium,
     paddingVertical: SIZES.medium,
     borderRadius: SIZES.borderRadius.medium,
@@ -231,40 +244,41 @@ const styles = StyleSheet.create({
   },
   preferenceTitle: {
     ...FONTS.subtitle,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
   },
   preferenceDescription: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginTop: 2,
   },
   aboutContainer: {
-    backgroundColor: COLORS.card,
+    backgroundColor: isDarkMode ? COLORS.card : theme.cardColor,
     padding: SIZES.medium,
     borderRadius: SIZES.borderRadius.medium,
     alignItems: 'center',
   },
   appName: {
     ...FONTS.h1,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     marginBottom: SIZES.base,
   },
   appVersion: {
     ...FONTS.body,
-    color: COLORS.textSecondary,
+    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
     marginBottom: SIZES.medium,
   },
   appDescription: {
     ...FONTS.body,
-    color: COLORS.text,
+    color: isDarkMode ? COLORS.text : theme.textColor,
     textAlign: 'center',
     marginBottom: SIZES.medium,
     lineHeight: 22,
   },
   appAuthor: {
     ...FONTS.subtitle,
-    color: COLORS.primary,
+    // La couleur est définie en inline dans le rendu pour s'adapter au thème
   },
 });
+};
 
 export default ProfileScreen;
