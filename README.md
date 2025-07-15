@@ -105,13 +105,133 @@ MovieNight utilise React Navigation avec une combinaison de navigation par ongle
 navigation.navigate('MovieDetail', { movie });
 ```
 
-## 📝 Notes pour les développeurs
+# 🎬 MovieNight
 
-Cette application a été créée à des fins éducatives pour la chaîne YouTube RonasDev. Les données de films sont simulées localement, mais vous pourriez facilement la connecter à une API comme [TMDB](https://www.themoviedb.org/documentation/api) pour obtenir des données réelles.
+**Votre compagnon ultime pour suivre, découvrir et gérer vos films préférés.**
 
-## 📚 Ressources additionnelles
+MovieNight est une application mobile moderne et élégante, développée avec React Native et Expo, conçue pour les cinéphiles. Elle permet de découvrir les films populaires, de rechercher des titres spécifiques, et de gérer des listes personnelles de favoris et de films "à voir".
 
-- [Tutoriel complet sur YouTube](https://www.youtube.com/ronasdev)
+---
+
+## 📸 Captures d'écran
+
+*Insérez ici vos captures d'écran. Vous pouvez les glisser-déposer dans GitHub ou utiliser des balises `<img>`.*
+
+| Écran d'accueil (Thème Clair) | Écran d'accueil (Thème Sombre) |
+| :---: | :---: |
+| ![Accueil Clair](https://via.placeholder.com/300x600.png?text=Accueil+Clair) | ![Accueil Sombre](https://via.placeholder.com/300x600.png?text=Accueil+Sombre) |
+
+| Détails du Film | Favoris |
+| :---: | :---: |
+| ![Détails](https://via.placeholder.com/300x600.png?text=Détails+Film) | ![Favoris](https://via.placeholder.com/300x600.png?text=Favoris) |
+
+---
+
+## ✨ Fonctionnalités
+
+- **Thème Dynamique :** Basculez instantanément entre un thème clair et un thème sombre.
+- **Découverte de Films :** Explorez les films les plus populaires du moment.
+- **Recherche Avancée :** Trouvez n'importe quel film grâce à la recherche intégrée.
+- **Détails Complets :** Accédez aux informations détaillées de chaque film (synopsis, note, genres, etc.).
+- **Gestion des Favoris :** Ajoutez ou retirez des films de votre liste de favoris personnelle.
+- **Liste "À Voir" (Watchlist) :** Gardez une trace des films que vous prévoyez de regarder.
+- **Persistance des Données :** Vos listes sont sauvegardées localement sur votre appareil grâce à `AsyncStorage`.
+- **Interface Moderne :** Une interface utilisateur propre, réactive et agréable.
+
+---
+
+## 🛠️ Technologies utilisées
+
+- **React Native** - Framework principal pour le développement mobile.
+- **Expo** - Plateforme pour faciliter le développement et le déploiement.
+- **React Navigation** - Pour la gestion de la navigation entre les écrans.
+- **AsyncStorage** - Pour le stockage local des données utilisateur.
+- **Axios** - Pour effectuer les requêtes à l'API TMDB.
+- **The Movie Database (TMDB) API** - Pour fournir les données sur les films.
+
+---
+
+## 🚀 Démarrage Rapide
+
+Suivez ces étapes pour lancer le projet sur votre machine locale.
+
+### Prérequis
+
+- [Node.js](https://nodejs.org/) (version 16 ou supérieure)
+- [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+
+### Installation
+
+1.  **Clonez le dépôt :**
+    ```bash
+    git clone https://github.com/VOTRE_NOM_UTILISATEUR/MovieNight.git
+    cd MovieNight
+    ```
+
+2.  **Installez les dépendances :**
+    ```bash
+    npm install
+    # ou
+    yarn install
+    ```
+
+3.  **Configurez votre clé d'API TMDB :**
+    - Créez un compte sur [TMDB](https://www.themoviedb.org/signup) et obtenez une clé d'API.
+    - Créez un fichier `.env` à la racine du projet.
+    - Ajoutez votre clé d'API dans ce fichier :
+      ```
+      TMDB_API_KEY=VOTRE_CLÉ_API_ICI
+      ```
+    - Assurez-vous que le fichier `src/services/api.js` est configuré pour lire cette variable d'environnement.
+
+4.  **Lancez l'application :**
+    ```bash
+    npx expo start
+    ```
+    Scannez le QR code avec l'application Expo Go sur votre téléphone (iOS ou Android).
+
+---
+
+## 📂 Structure du projet
+
+Le projet est organisé de manière modulaire pour faciliter la maintenance et l'évolution :
+
+```
+MovieNight/
+├── src/
+│   ├── assets/         # Polices et images statiques
+│   ├── components/     # Composants réutilisables (MovieCard, Header...)
+│   ├── contexts/       # Contextes React (ThemeContext)
+│   ├── hooks/          # Hooks personnalisés (useAsyncStorage)
+│   ├── navigation/     # Configuration de la navigation
+│   ├── screens/        # Écrans de l'application (HomeScreen, MovieDetailScreen...)
+│   ├── services/       # Services (api.js, storageService.js)
+│   └── utils/          # Utilitaires (theme.js, constants...)
+├── .env                # Fichier pour les variables d'environnement (non versionné)
+├── App.js              # Point d'entrée de l'application
+└── package.json        # Dépendances et scripts
+```
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Si vous avez des idées d'amélioration ou des corrections de bugs, n'hésitez pas à ouvrir une *issue* ou une *pull request*.
+
+---
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+---
+
+## 📞 Contact
+
+**RonasDev** - [YouTube](https://www.youtube.com/ronasdev) - [GitHub](https://github.com/ronasdev)
+
+Un projet réalisé avec ❤️ pour la communauté des développeurs.
 - [Documentation React Native](https://reactnative.dev/docs/getting-started)
 - [Documentation Expo](https://docs.expo.dev/)
 - [Documentation React Navigation](https://reactnavigation.org/docs/getting-started)

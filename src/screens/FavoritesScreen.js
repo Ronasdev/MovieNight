@@ -76,7 +76,7 @@ const FavoritesScreen = ({ navigation }) => {
    * Naviguer vers les détails d'un film
    */
   const goToMovieDetails = (movie) => {
-    navigation.navigate('MovieDetail', { movie });
+    navigation.navigate('MovieDetail', { movieId: movie.id, movieTitle: movie.title });
   };
 
   // Rendu de l'écran vide si la liste des favoris est vide

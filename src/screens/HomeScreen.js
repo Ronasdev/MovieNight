@@ -22,6 +22,7 @@ import {
   Keyboard
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Composants personnalisés
@@ -38,7 +39,7 @@ import ThemedContainer from '../components/ThemedContainer';
 
 // Français: Importation des fonctions de notre service API et du service de stockage.
 // English: Importing functions from our API service and storage service.
-import { getPopularMovies, getPosterUrl, searchMovies } from '../services/api';
+import { getPopularMovies, getMovieDetails, getPosterUrl, searchMovies } from '../services/api';
 import storageService, { isMovieInList, addMovieToList, removeMovieFromList, getData } from '../services/storageService';
 
 const HomeScreen = ({ navigation }) => {
@@ -51,7 +52,9 @@ const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
   const [favorites, setFavorites] = useState([]);
-  const [watchedMovies, setWatchedMovies] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+  const [updatingFavorites, setUpdatingFavorites] = useState(new Set());
+  const [updatingWatchlist, setUpdatingWatchlist] = useState(new Set());
   
   // SafeArea pour gérer les encoches et barres système
   const insets = useSafeAreaInsets();
@@ -86,31 +89,35 @@ const HomeScreen = ({ navigation }) => {
     };
 
     fetchMovies();
-    loadUserLists();
   }, []);
   
   // Charger les listes sauvegardées de l'utilisateur
-  const loadUserLists = async () => {
+  const loadUserLists = React.useCallback(async () => {
     try {
-      // Vous pourriez utiliser le hook useAsyncStorage ici dans une application réelle
-      // Mais pour la simplicité du tutoriel, nous utilisons directement les fonctions
       const favs = await getData(storageService.STORAGE_KEYS.FAVORITE_MOVIES) || [];
-      const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
+      const watched = await getData(storageService.STORAGE_KEYS.WATCHLIST) || [];
       
       if(Array.isArray(favs)) {
         setFavorites(favs);
-      }else{
+      } else {
         setFavorites([]);
       }
       if(Array.isArray(watched)) {
-        setWatchedMovies(watched);
-      }else{
-        setWatchedMovies([]);
+        setWatchlist(watched);
+      } else {
+        setWatchlist([]);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des listes utilisateur:', error);
     }
-  };
+  }, []); // Les setters d'état sont stables, donc le tableau de dépendances est vide
+
+  // Recharger les listes lorsque l'écran est focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserLists();
+    }, [loadUserLists])
+  );
   
   // Gérer la recherche de films
   useEffect(() => {
@@ -140,43 +147,54 @@ const HomeScreen = ({ navigation }) => {
   
   // Gérer l'ajout/retrait des favoris
   const toggleFavorite = async (movie) => {
+    setUpdatingFavorites(prev => new Set(prev).add(movie.id));
     try {
       const isFavorite = favorites.some(fav => fav.id === movie.id);
       
       if (isFavorite) {
+        // Si le film est déjà un favori, on le retire.
         await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
-        if(Array.isArray(favorites)) {
-          setFavorites(prev => prev.filter(m => m.id !== movie.id));
-        }
+        setFavorites(prev => prev.filter(m => m.id !== movie.id));
       } else {
-        await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie);
-        if(Array.isArray(favorites)) {
-          setFavorites(prev => [...prev, movie]);
-        }
+        // Si le film n'est pas un favori, on récupère ses détails complets.
+        const fullMovieDetails = await getMovieDetails(movie.id);
+        // On sauvegarde l'objet complet.
+        await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, fullMovieDetails);
+        setFavorites(prev => [...prev, fullMovieDetails]);
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des favoris:', error);
+    } finally {
+      setUpdatingFavorites(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(movie.id);
+        return newSet;
+      });
     }
   };
   
   // Gérer le marquage comme vu/non vu
-  const toggleWatched = async (movie) => {
+  const toggleWatchlist = async (movie) => {
+    setUpdatingWatchlist(prev => new Set(prev).add(movie.id));
     try {
-      const isWatched = watchedMovies.some(m => m.id === movie.id);
+      const isInWatchlist = watchlist.some(item => item.id === movie.id);
       
-      if (isWatched) {
-        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
-        if(Array.isArray(watchedMovies)) {
-            setWatchedMovies(prev => prev.filter(m => m.id !== movie.id));
-        }
+      if (isInWatchlist) {
+        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
+        setWatchlist(prev => prev.filter(m => m.id !== movie.id));
       } else {
-        await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
-        if(Array.isArray(watchedMovies)) {
-          setWatchedMovies(prev => [...prev, movie]);
-        }
+        const fullMovieDetails = await getMovieDetails(movie.id);
+        await addMovieToList(storageService.STORAGE_KEYS.WATCHLIST, fullMovieDetails);
+        setWatchlist(prev => [...prev, fullMovieDetails]);
       }
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des films vus:', error);
+      console.error('Erreur lors de la mise à jour de la watchlist:', error);
+    } finally {
+      setUpdatingWatchlist(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(movie.id);
+        return newSet;
+      });
     }
   };
   
@@ -234,16 +252,20 @@ const HomeScreen = ({ navigation }) => {
               contentContainerStyle={styles.moviesGrid}
               renderItem={({ item }) => {
                                 const isFavorite = favorites.some(fav => fav.id === item.id);
-                const isWatched = watchedMovies.some(watched => watched.id === item.id);
+                const isUpdating = updatingFavorites.has(item.id);
+                const isUpdatingWatchlist = updatingWatchlist.has(item.id);
+                const isInWatchlist = watchlist.some(watchlistItem => watchlistItem.id === item.id);
                
                 return (
                   <MovieCard
                     movie={item}
                     onPress={() => navigation.navigate('MovieDetail', { movieId: item.id, movieTitle: item.title })}
                     onFavoritePress={() => toggleFavorite(item)}
-                    onWatchedPress={() => toggleWatched(item)}
+                    onWatchedPress={() => toggleWatchlist(item)}
                     isFavorite={isFavorite}
-                    isWatched={isWatched}
+                    isWatched={isInWatchlist}
+                    isUpdatingFavorite={isUpdating}
+                    isUpdatingWatched={isUpdatingWatchlist}
                   />
                 );
               }}

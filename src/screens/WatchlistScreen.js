@@ -46,35 +46,19 @@ const WatchlistScreen = ({ navigation }) => {
     useAsyncStorage(storageService.STORAGE_KEYS.WATCHLIST, []);
   
   // État pour suivre les films déjà vus
-  const [watchedMovies, setWatchedMovies] = useState([]);
   
-  // Utilisation de useEffect pour charger les films vus une fois au montage du composant
-  useEffect(() => {
-    loadWatchedMovies();
-  }, []);
   
   // Utilisation de useFocusEffect pour rafraîchir les données quand l'écran devient actif
   useFocusEffect(
     React.useCallback(() => {
-      // On ne recharge pas automatiquement via refreshData() pour éviter la boucle infinie
-      // Le hook useAsyncStorage se charge déjà de charger les données au montage
-      return () => {
-        // Fonction de nettoyage si nécessaire
-      };
-    }, [])
+      refreshData(); // Recharge les données à chaque fois que l'écran est focus
+    }, [refreshData]) // Dépendance à refreshData pour s'assurer qu'elle est stable
   );
   
   /**
    * Chargement de la liste des films déjà vus
    */
-  const loadWatchedMovies = async () => {
-    try {
-      const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
-      setWatchedMovies(watched);
-    } catch (error) {
-      console.error('Erreur lors du chargement des films vus:', error);
-    }
-  };
+  
   
   /**
    * Retirer un film de la watchlist
@@ -92,27 +76,13 @@ const WatchlistScreen = ({ navigation }) => {
   /**
    * Marquer un film comme vu et le retirer de la watchlist
    */
-  const handleMarkAsWatched = async (movie) => {
-    try {
-      // Ajout à la liste des films vus
-      await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
-      
-      // Retrait de la watchlist
-      await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
-      
-      // Mise à jour des états locaux
-      setWatchedMovies(prev => [...prev, movie]);
-      setWatchlist(prev => prev.filter(item => item.id !== movie.id));
-    } catch (error) {
-      console.error('Erreur lors du marquage comme vu:', error);
-    }
-  };
+  
   
   /**
    * Naviguer vers les détails d'un film
    */
   const goToMovieDetails = (movie) => {
-    navigation.navigate('MovieDetail', { movie });
+    navigation.navigate('MovieDetail', { movieId: movie.id, movieTitle: movie.title });
   };
 
   // Rendu de l'écran vide si la watchlist est vide
@@ -155,15 +125,15 @@ const WatchlistScreen = ({ navigation }) => {
             watchlist.length === 0 && styles.emptyList
           ]}
           renderItem={({ item }) => {
-            const isWatched = watchedMovies.some(movie => movie.id === item.id);
+            
             
             return (
               <MovieCard
                 movie={item}
                 onPress={() => goToMovieDetails(item)}
                 onFavoritePress={() => {/* Géré dans l'écran détail */}}
-                onWatchedPress={() => handleMarkAsWatched(item)}
-                isWatched={isWatched}
+                onWatchedPress={() => handleRemoveFromWatchlist(item.id)}
+                isWatched={true}
                 style={styles.movieCard}
               />
             );

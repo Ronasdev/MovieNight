@@ -9,7 +9,8 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
@@ -99,6 +100,8 @@ const MovieCard = ({
   onWatchedPress,
   isFavorite = false,
   isWatched = false,
+  isUpdatingFavorite = false,
+  isUpdatingWatched = false,
   style = {}
 }) => {
   const { theme } = useTheme();
@@ -170,23 +173,33 @@ const MovieCard = ({
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: isFavorite ? FAVORITE_COLOR : 'rgba(0,0,0,0.5)' }]}
           onPress={onFavoritePress}
+          disabled={isUpdatingFavorite}
         >
-          <FontAwesome 
-            name={isFavorite ? "heart" : "heart-o"} 
-            size={16} 
-            color={theme.white} 
-          />
+          {isUpdatingFavorite ? (
+            <ActivityIndicator size="small" color={theme.white} />
+          ) : (
+            <FontAwesome 
+              name={isFavorite ? "heart" : "heart-o"} 
+              size={16} 
+              color={theme.white} 
+            />
+          )}
         </TouchableOpacity>
         
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: isWatched ? WATCHED_COLOR : 'rgba(0,0,0,0.5)' }]}
           onPress={onWatchedPress}
+          disabled={isUpdatingWatched}
         >
-          <FontAwesome 
-            name={isWatched ? "eye" : "eye-slash"} 
-            size={16} 
-            color={theme.white} 
-          />
+          {isUpdatingWatched ? (
+            <ActivityIndicator size="small" color={theme.white} />
+          ) : (
+            <FontAwesome 
+              name={isWatched ? "eye" : "eye-slash"} 
+              size={16} 
+              color={theme.white} 
+            />
+          )}
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
