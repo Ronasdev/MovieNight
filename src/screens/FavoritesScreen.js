@@ -26,8 +26,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import MovieCard from '../components/MovieCard';
 import Header from '../components/Header';
 
-// Styles et utilitaires
-import { COLORS, SIZES, FONTS } from '../utils/theme';
+// Styles et utilitaires (on retire COLORS pour n'utiliser que le thème dynamique)
+import { SIZES, FONTS } from '../utils/theme';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemedContainer from '../components/ThemedContainer';
 
@@ -42,7 +42,7 @@ const FavoritesScreen = ({ navigation }) => {
   const { isDarkMode, theme } = useTheme();
   
   // Création des styles dynamiques
-  const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+    const styles = useMemo(() => createStyles(theme), [theme]);
   // Utilisation de notre hook personnalisé pour gérer la liste des films favoris
   const [favorites, setFavorites, loading, error, refreshData] = 
     useAsyncStorage(storageService.STORAGE_KEYS.FAVORITE_MOVIES, []);
@@ -82,7 +82,7 @@ const FavoritesScreen = ({ navigation }) => {
   // Rendu de l'écran vide si la liste des favoris est vide
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <FontAwesome name="heart" size={70} color={isDarkMode ? COLORS.secondary : '#ff6b6b'} />
+            <FontAwesome name="heart" size={70} color={'#ff6b6b'} />
       <Text style={styles.emptyTitle}>Aucun favori</Text>
       <Text style={styles.emptySubtitle}>
         Ajoutez des films à vos favoris en explorant la bibliothèque de films
@@ -107,7 +107,7 @@ const FavoritesScreen = ({ navigation }) => {
       
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+                    <ActivityIndicator size="large" color={'#E91E63'} />
           <Text style={styles.loadingText}>Chargement de vos favoris...</Text>
         </View>
       ) : (
@@ -136,7 +136,7 @@ const FavoritesScreen = ({ navigation }) => {
 };
 
 // Fonction pour créer les styles en fonction du thème
-const createStyles = (theme, isDarkMode) => StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
     // Le backgroundColor est géré par ThemedContainer
@@ -148,7 +148,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   loadingText: {
     ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     marginTop: SIZES.small,
   },
   moviesGrid: {
@@ -167,26 +167,26 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   emptyTitle: {
     ...FONTS.h2,
-    color: isDarkMode ? COLORS.text : theme.textColor,
+        color: theme.textColor,
     marginTop: SIZES.medium,
     marginBottom: SIZES.small,
     textAlign: 'center',
   },
   emptySubtitle: {
     ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     textAlign: 'center',
     marginBottom: SIZES.large,
   },
-  exploreButton: {
-    backgroundColor: COLORS.primary,
+    exploreButton: {
+    backgroundColor: '#E91E63', // Couleur d'accentuation
     paddingHorizontal: SIZES.large,
     paddingVertical: SIZES.medium,
     borderRadius: SIZES.borderRadius.medium,
   },
   exploreButtonText: {
     ...FONTS.subtitle,
-    color: isDarkMode ? COLORS.text : '#FFFFFF',
+        color: '#FFFFFF', // Texte blanc pour un bon contraste
   },
   movieCard: {
     marginBottom: SIZES.medium,

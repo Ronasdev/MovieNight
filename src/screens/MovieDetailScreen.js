@@ -1,13 +1,8 @@
 /**
  * MovieDetailScreen.js - Écran de détail d'un film
  * 
- * Cet écran affiche les informations détaillées d'un film:
- * - Image de fond et affiche
- * - Titre, année, genres
- * - Synopsis
- * - Boutons d'action (favoris, à voir, vu)
- * 
- * C'est un exemple parfait de Stack Navigation, accessible depuis plusieurs écrans.
+ * Cet écran affiche les informations détaillées d'un film et gère les interactions utilisateur
+ * (favoris, vus, à voir) en utilisant un thème dynamique pour l'affichage.
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -20,416 +15,206 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  Platform
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import des services et utilitaires
-import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
+import { getMovieDetails, getPosterUrl } from '../services/api';
+import { SIZES, FONTS, SHADOWS } from '../utils/theme'; // On retire COLORS
 import { useTheme } from '../contexts/ThemeContext';
 import ThemedContainer from '../components/ThemedContainer';
 import storageService, { isMovieInList, addMovieToList, removeMovieFromList } from '../services/storageService';
 
 const { width, height } = Dimensions.get('window');
 
+// Couleurs spécifiques pour les états des boutons, indépendantes du thème
+const STATUS_COLORS = {
+  favorite: '#ff6b6b', // Rouge pour les favoris
+  watched: '#2e5bff',   // Bleu pour les vus
+  watchlist: '#ffc107', // Jaune pour la watchlist
+};
+
 const MovieDetailScreen = ({ route, navigation }) => {
-  // Utilisation du contexte de thème
+  const { movieId } = route.params;
   const { isDarkMode, theme } = useTheme();
-  // Récupération du film passé en paramètre de navigation
-  const { movie } = route.params;
   const insets = useSafeAreaInsets();
-  
-  // États pour suivre si le film est dans différentes listes
+
+  const [movieDetails, setMovieDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
-  
-  // Vérifier le statut du film dans les différentes listes au chargement de l'écran
+
+  // Génération des styles basés sur le thème. Recalculés seulement si le thème change.
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   useEffect(() => {
-    checkMovieStatus();
-  }, []);
-  
-  /**
-   * Vérifie le statut du film dans toutes les listes sauvegardées
-   */
-  const checkMovieStatus = async () => {
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        const details = await getMovieDetails(movieId);
+        setMovieDetails(details);
+        await checkMovieStatus(details.id);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données du film:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [movieId]);
+
+  const checkMovieStatus = async (currentMovieId) => {
     try {
-      // Vérification pour les favoris
-      const favStatus = await isMovieInList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
+      const [favStatus, watchedStatus, watchlistStatus] = await Promise.all([
+        isMovieInList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, currentMovieId),
+        isMovieInList(storageService.STORAGE_KEYS.WATCHED_MOVIES, currentMovieId),
+        isMovieInList(storageService.STORAGE_KEYS.WATCHLIST, currentMovieId),
+      ]);
       setIsFavorite(favStatus);
-      
-      // Vérification pour les films vus
-      const watchedStatus = await isMovieInList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
       setIsWatched(watchedStatus);
-      
-      // Vérification pour la watchlist
-      const watchlistStatus = await isMovieInList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
       setIsInWatchlist(watchlistStatus);
     } catch (error) {
       console.error('Erreur lors de la vérification du statut du film:', error);
     }
   };
-  
-  /**
-   * Gestion des favoris
-   */
-  const toggleFavorite = async () => {
+
+  const handleToggle = async (listKey, status, setStatus, movieData) => {
     try {
-      if (isFavorite) {
-        await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
+      if (status) {
+        await removeMovieFromList(listKey, movieData.id);
       } else {
-        await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie);
+        const movieToStore = { id: movieData.id, title: movieData.title, posterUrl: getPosterUrl(movieData.poster_path) };
+        await addMovieToList(listKey, movieToStore);
       }
-      setIsFavorite(!isFavorite);
+      setStatus(!status);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des favoris:', error);
+      console.error(`Erreur lors de la mise à jour de la liste ${listKey}:`, error);
     }
   };
+
+  const toggleFavorite = () => handleToggle(storageService.STORAGE_KEYS.FAVORITE_MOVIES, isFavorite, setIsFavorite, movieDetails);
+  const toggleWatchlist = () => handleToggle(storageService.STORAGE_KEYS.WATCHLIST, isInWatchlist, setIsInWatchlist, movieDetails);
   
-  /**
-   * Gestion des films vus
-   */
   const toggleWatched = async () => {
-    try {
-      if (isWatched) {
-        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
-      } else {
-        await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
-        // Si on marque comme vu, on retire de la watchlist
-        if (isInWatchlist) {
-          await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
-          setIsInWatchlist(false);
-        }
-      }
-      setIsWatched(!isWatched);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des films vus:', error);
-    }
-  };
-  
-  /**
-   * Gestion de la watchlist
-   */
-  const toggleWatchlist = async () => {
-    try {
-      if (isInWatchlist) {
-        await removeMovieFromList(storageService.STORAGE_KEYS.WATCHLIST, movie.id);
-      } else {
-        await addMovieToList(storageService.STORAGE_KEYS.WATCHLIST, movie);
-      }
-      setIsInWatchlist(!isInWatchlist);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour de la watchlist:', error);
+    await handleToggle(storageService.STORAGE_KEYS.WATCHED_MOVIES, isWatched, setIsWatched, movieDetails);
+    // Si on marque comme 'vu' et qu'il est dans la watchlist, on le retire
+    if (!isWatched && isInWatchlist) {
+      await handleToggle(storageService.STORAGE_KEYS.WATCHLIST, true, setIsInWatchlist, movieDetails);
     }
   };
 
-  // Calcul du nombre d'étoiles à afficher
-  const renderStars = () => {
-    const rating = movie.vote_average / 2; // Conversion de 0-10 à 0-5
-    return (
-      <View style={styles.ratingContainer}>
-        {[1, 2, 3, 4, 5].map((star) => {
-          let iconName = 'star-o';
-          if (star <= Math.floor(rating)) {
-            iconName = 'star';
-          } else if (star === Math.ceil(rating) && !Number.isInteger(rating)) {
-            iconName = 'star-half-full';
-          }
-          return (
-            <FontAwesome
-              key={`star-${star}`}
-              name={iconName}
-              size={18}
-              color={COLORS.star}
-              style={{ marginRight: 3 }}
-            />
-          );
-        })}
-        <Text style={styles.ratingText}>{movie.vote_average.toFixed(1)}/10</Text>
-      </View>
-    );
+  const renderStars = (ratingValue) => {
+    const rating = ratingValue / 2;
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    const starColor = STATUS_COLORS.watchlist; // Utilise la couleur 'warning'
+    let stars = [];
+
+    for (let i = 0; i < fullStars; i++) stars.push(<FontAwesome key={`full_${i}`} name="star" size={16} color={starColor} />);
+    if (halfStar) stars.push(<FontAwesome key="half" name="star-half-empty" size={16} color={starColor} />);
+    for (let i = 0; i < emptyStars; i++) stars.push(<FontAwesome key={`empty_${i}`} name="star-o" size={16} color={starColor} />);
+
+    return stars;
   };
 
-  // Création des styles dynamiques
-  const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+  if (loading) {
+    return <ThemedContainer style={styles.loadingContainer}><Text style={styles.loadingText}>Chargement...</Text></ThemedContainer>;
+  }
+
+  if (!movieDetails) {
+    return <ThemedContainer style={styles.loadingContainer}><Text style={styles.loadingText}>Détails non disponibles.</Text></ThemedContainer>;
+  }
 
   return (
     <ThemedContainer style={styles.container}>
-      {/* Barre de statut transparente */}
-      <StatusBar translucent backgroundColor="transparent" />
-      
-      {/* Image de fond avec dégradé */}
-      <View style={styles.backdropContainer}>
-        <Image
-          source={{
-            uri: movie.backdrop_path
-              ? `https://image.tmdb.org/t/p/w780${movie.backdrop_path}`
-              : 'https://via.placeholder.com/780x440?text=No+Image'
-          }}
-          style={styles.backdropImage}
-          resizeMode="cover"
-        />
-        <LinearGradient
-          colors={['rgba(18, 18, 18, 0)', COLORS.background]}
-          style={styles.backdropGradient}
-        />
-      </View>
-      
-      {/* Bouton de retour */}
-      <TouchableOpacity
-        style={[styles.backButton, { top: insets.top + 10 }]}
-        onPress={() => navigation.goBack()}
-      >
-        <FontAwesome name="arrow-left" size={20} color={COLORS.text} />
-      </TouchableOpacity>
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* En-tête avec poster et titre */}
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <View style={styles.backdropContainer}>
+          <Image source={{ uri: getPosterUrl(movieDetails.backdrop_path) }} style={styles.backdropImage} resizeMode="cover" />
+          <LinearGradient colors={['transparent', theme.backgroundColor]} style={styles.backdropGradient} />
+        </View>
+
+        <TouchableOpacity style={[styles.backButton, { top: insets.top + 10 }]} onPress={() => navigation.goBack()}>
+          <FontAwesome name="chevron-left" size={16} color="#FFFFFF" />
+        </TouchableOpacity>
+
         <View style={styles.headerContainer}>
-          {/* Poster du film */}
-          <Image
-            source={{
-              uri: movie.poster_path
-                ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-                : 'https://via.placeholder.com/342x513?text=No+Image'
-            }}
-            style={styles.posterImage}
-            resizeMode="cover"
-          />
-          
-          {/* Informations du film */}
+          <Image source={{ uri: getPosterUrl(movieDetails.poster_path) }} style={styles.posterImage} resizeMode="cover" />
           <View style={styles.movieInfo}>
-            <Text style={styles.title}>{movie.title}</Text>
-            
-            {/* Année */}
-            {movie.release_date && (
-              <Text style={styles.year}>
-                {movie.release_date.substring(0, 4)}
-              </Text>
-            )}
-            
-            {/* Notation */}
-            {renderStars()}
-            
-            {/* Genres */}
-            {movie.genres && (
-              <View style={styles.genresContainer}>
-                {movie.genres.map((genre, index) => (
-                  <View key={index} style={styles.genreBadge}>
-                    <Text style={styles.genreText}>{genre}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+            <Text style={styles.title}>{movieDetails.title}</Text>
+            <Text style={styles.year}>{new Date(movieDetails.release_date).getFullYear()}</Text>
+            <View style={styles.ratingContainer}>
+              {renderStars(movieDetails.vote_average)}
+              <Text style={styles.ratingText}>{movieDetails.vote_average.toFixed(1)}/10</Text>
+            </View>
+            <View style={styles.genresContainer}>
+              {movieDetails.genres.slice(0, 3).map(genre => (
+                <View key={genre.id} style={styles.genreBadge}><Text style={styles.genreText}>{genre.name}</Text></View>
+              ))}
+            </View>
           </View>
         </View>
-        
-        {/* Synopsis */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Synopsis</Text>
-          <Text style={styles.overview}>{movie.overview}</Text>
-        </View>
-        
-        {/* Boutons d'action */}
+
+        <View style={styles.section}><Text style={styles.sectionTitle}>Synopsis</Text><Text style={styles.overview}>{movieDetails.overview}</Text></View>
+
         <View style={styles.actionButtonsContainer}>
-          {/* Bouton Favoris */}
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isFavorite && { backgroundColor: 'rgba(255, 107, 107, 0.2)' },
-            ]}
-            onPress={toggleFavorite}
-          >
-            <FontAwesome
-              name={isFavorite ? 'heart' : 'heart-o'}
-              size={22}
-              color={isFavorite ? COLORS.secondary : COLORS.text}
-            />
-            <Text style={[
-              styles.actionButtonText,
-              isFavorite && { color: COLORS.secondary }
-            ]}>
-              {isFavorite ? 'Dans les favoris' : 'Ajouter aux favoris'}
-            </Text>
-          </TouchableOpacity>
-          
-          {/* Bouton Vu */}
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isWatched && { backgroundColor: 'rgba(46, 91, 255, 0.2)' },
-            ]}
-            onPress={toggleWatched}
-          >
-            <FontAwesome
-              name={isWatched ? 'eye' : 'eye-slash'}
-              size={22}
-              color={isWatched ? COLORS.primary : isDarkMode ? COLORS.text : theme.textColor}
-            />
-            <Text style={[
-              styles.actionButtonText,
-              isWatched && { color: COLORS.primary }
-            ]}>
-              {isWatched ? 'Déjà vu' : 'Marquer comme vu'}
-            </Text>
-          </TouchableOpacity>
-          
-          {/* Bouton À voir */}
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isInWatchlist && { backgroundColor: 'rgba(255, 193, 7, 0.2)' },
-            ]}
-            onPress={toggleWatchlist}
-          >
-            <FontAwesome
-              name={isInWatchlist ? 'bookmark' : 'bookmark-o'}
-              size={22}
-              color={isInWatchlist ? COLORS.warning : COLORS.text}
-            />
-            <Text style={[
-              styles.actionButtonText,
-              isInWatchlist && { color: COLORS.warning }
-            ]}>
-              {isInWatchlist ? 'Dans ma liste' : 'Ajouter à ma liste'}
-            </Text>
-          </TouchableOpacity>
+          <ActionButton icon="heart" text="Ajouter aux favoris" activeText="Dans mes favoris" active={isFavorite} color={STATUS_COLORS.favorite} onPress={toggleFavorite} />
+          <ActionButton icon="check-circle" text="Marquer comme vu" activeText="Déjà vu" active={isWatched} color={STATUS_COLORS.watched} onPress={toggleWatched} />
+          <ActionButton icon="bookmark" text="Ajouter à ma liste" activeText="Dans ma liste" active={isInWatchlist} color={STATUS_COLORS.watchlist} onPress={toggleWatchlist} />
         </View>
       </ScrollView>
     </ThemedContainer>
   );
 };
 
+// Composant réutilisable pour les boutons d'action pour simplifier le JSX
+const ActionButton = ({ icon, text, activeText, active, color, onPress }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  return (
+    <TouchableOpacity
+      style={[styles.actionButton, active && { backgroundColor: `${color}33` }]} // Ajoute une opacité de 20% (33 en hex)
+      onPress={onPress}
+    >
+      <FontAwesome name={active ? icon : `${icon}-o`} size={22} color={active ? color : theme.textColor} />
+      <Text style={[styles.actionButtonText, active && { color }]}>{active ? activeText : text}</Text>
+    </TouchableOpacity>
+  );
+};
+
 // Fonction pour créer les styles en fonction du thème
-const createStyles = (theme, isDarkMode) => StyleSheet.create({
-  container: {
-    flex: 1,
-    // Le backgroundColor est géré par ThemedContainer
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingBottom: 30,
-  },
-  backdropContainer: {
-    width: '100%',
-    height: height * 0.35,
-    position: 'absolute',
-    top: 0,
-  },
-  backdropImage: {
-    width: '100%',
-    height: '100%',
-  },
-  backdropGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 15,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    marginTop: height * 0.25,
-    paddingHorizontal: SIZES.medium,
-  },
-  posterImage: {
-    width: 120,
-    height: 180,
-    borderRadius: SIZES.borderRadius.medium,
-    marginRight: SIZES.medium,
-    ...SHADOWS.medium,
-  },
-  movieInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    ...FONTS.h2,
-    color: isDarkMode ? COLORS.text : theme.textColor,
-    marginBottom: SIZES.base,
-  },
-  year: {
-    ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
-    marginBottom: SIZES.base,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SIZES.base,
-  },
-  ratingText: {
-    ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
-    marginLeft: SIZES.small,
-  },
-  genresContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  genreBadge: {
-    paddingHorizontal: SIZES.small,
-    paddingVertical: SIZES.base / 2,
-    backgroundColor: isDarkMode ? COLORS.cardLight : theme.cardLightColor,
-    borderRadius: SIZES.borderRadius.full,
-    marginRight: SIZES.base,
-    marginBottom: SIZES.base,
-  },
-  genreText: {
-    ...FONTS.caption,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
-  },
-  section: {
-    paddingHorizontal: SIZES.medium,
-    marginTop: SIZES.large,
-  },
-  sectionTitle: {
-    ...FONTS.h3,
-    color: isDarkMode ? COLORS.text : theme.textColor,
-    marginBottom: SIZES.small,
-  },
-  overview: {
-    ...FONTS.body,
-    color: isDarkMode ? COLORS.text : theme.textColor,
-    lineHeight: 22,
-  },
-  actionButtonsContainer: {
-    paddingHorizontal: SIZES.medium,
-    marginTop: SIZES.xlarge,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SIZES.medium,
-    paddingHorizontal: SIZES.medium,
-    backgroundColor: isDarkMode ? COLORS.cardLight : theme.cardLightColor,
-    borderRadius: SIZES.borderRadius.medium,
-    marginBottom: SIZES.medium,
-  },
-  actionButtonText: {
-    ...FONTS.subtitle,
-    color: isDarkMode ? COLORS.text : theme.textColor,
-    marginLeft: SIZES.medium,
-  },
+const createStyles = (theme) => StyleSheet.create({
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: SIZES.medium, ...FONTS.body, color: theme.secondaryTextColor },
+  scrollView: { flex: 1 },
+  content: { paddingBottom: 30 },
+  backdropContainer: { width: '100%', height: height * 0.35, position: 'absolute', top: 0 },
+  backdropImage: { width: '100%', height: '100%' },
+  backdropGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%' },
+  backButton: { position: 'absolute', left: 15, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  headerContainer: { flexDirection: 'row', marginTop: height * 0.25, paddingHorizontal: SIZES.medium },
+  posterImage: { width: 120, height: 180, borderRadius: SIZES.borderRadius.medium, marginRight: SIZES.medium, ...SHADOWS.medium },
+  movieInfo: { flex: 1, justifyContent: 'center' },
+  title: { ...FONTS.h2, color: theme.textColor, marginBottom: SIZES.base },
+  year: { ...FONTS.body, color: theme.secondaryTextColor, marginBottom: SIZES.base },
+  ratingContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: SIZES.base },
+  ratingText: { ...FONTS.body, color: theme.secondaryTextColor, marginLeft: SIZES.small },
+  genresContainer: { flexDirection: 'row', flexWrap: 'wrap' },
+  genreBadge: { paddingHorizontal: SIZES.small, paddingVertical: SIZES.base / 2, backgroundColor: theme.cardLightColor, borderRadius: SIZES.borderRadius.full, marginRight: SIZES.base, marginBottom: SIZES.base },
+  genreText: { ...FONTS.caption, color: theme.secondaryTextColor },
+  section: { paddingHorizontal: SIZES.medium, marginTop: SIZES.large },
+  sectionTitle: { ...FONTS.h3, color: theme.textColor, marginBottom: SIZES.small },
+  overview: { ...FONTS.body, color: theme.textColor, lineHeight: 22 },
+  actionButtonsContainer: { paddingHorizontal: SIZES.medium, marginTop: SIZES.xlarge },
+  actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: SIZES.medium, paddingHorizontal: SIZES.medium, backgroundColor: theme.cardLightColor, borderRadius: SIZES.borderRadius.medium, marginBottom: SIZES.medium },
+  actionButtonText: { ...FONTS.subtitle, color: theme.textColor, marginLeft: SIZES.medium },
 });
 
 export default MovieDetailScreen;

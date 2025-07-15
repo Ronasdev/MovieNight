@@ -28,22 +28,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MovieCard from '../components/MovieCard';
 import Header from '../components/Header';
 
-// Styles et utilitaires
-import { COLORS, SIZES, FONTS, SHADOWS } from '../utils/theme';
+// Styles et utilitaires (on retire COLORS pour n'utiliser que le thème dynamique)
+import { SIZES, FONTS, SHADOWS } from '../utils/theme';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemedContainer from '../components/ThemedContainer';
 
 // Stockage
-import storageService, { isMovieInList, addMovieToList, removeMovieFromList, getData } from '../services/storageService';
 
-// Données de démonstration pour le tutoriel (normalement, ces données viendraient d'une API comme TMDB)
-import mockMovies from '../utils/mockData';
+
+// Français: Importation des fonctions de notre service API et du service de stockage.
+// English: Importing functions from our API service and storage service.
+import { getPopularMovies, getPosterUrl, searchMovies } from '../services/api';
+import storageService, { isMovieInList, addMovieToList, removeMovieFromList, getData } from '../services/storageService';
 
 const HomeScreen = ({ navigation }) => {
   // Utilisation du contexte de thème
-  const { isDarkMode, theme } = useTheme();
+  const { theme } = useTheme();
   // États
-  const [movies, setMovies] = useState([]);
+  const [allMovies, setAllMovies] = useState([]);
+  const [filteredMovies, setFilteredMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
@@ -53,16 +56,36 @@ const HomeScreen = ({ navigation }) => {
   // SafeArea pour gérer les encoches et barres système
   const insets = useSafeAreaInsets();
   
-  // Charger les films au démarrage
+  // Charger les films depuis l'API au démarrage de l'écran
   useEffect(() => {
-    // Dans un tutoriel réel, vous feriez un appel API ici
-    // Pour simplifier, nous utilisons des données mockées
-    setTimeout(() => {
-      setMovies(mockMovies);
-      setLoading(false);
-    }, 1000); // Simulation de délai réseau
-    
-    // Chargement des listes de l'utilisateur depuis AsyncStorage
+    const fetchMovies = async () => {
+      try {
+        setLoading(true);
+        // On récupère les films bruts de l'API
+        const moviesFromApi = await getPopularMovies();
+
+        // console.log(moviesFromApi);
+        
+        // On s'assure que les données sont valides avant de les utiliser
+        if (Array.isArray(moviesFromApi)) {
+          setAllMovies(moviesFromApi);
+          setFilteredMovies(moviesFromApi);
+        } else {
+          // En cas de réponse invalide, on initialise avec des tableaux vides
+          setAllMovies([]);
+          setFilteredMovies([]);
+        }
+
+      } catch (error) {
+        console.error("Erreur lors de la récupération des films:", error);
+        setAllMovies([]);
+        setFilteredMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovies();
     loadUserLists();
   }, []);
   
@@ -74,18 +97,46 @@ const HomeScreen = ({ navigation }) => {
       const favs = await getData(storageService.STORAGE_KEYS.FAVORITE_MOVIES) || [];
       const watched = await getData(storageService.STORAGE_KEYS.WATCHED_MOVIES) || [];
       
-      setFavorites(favs);
-      setWatchedMovies(watched);
+      if(Array.isArray(favs)) {
+        setFavorites(favs);
+      }else{
+        setFavorites([]);
+      }
+      if(Array.isArray(watched)) {
+        setWatchedMovies(watched);
+      }else{
+        setWatchedMovies([]);
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des listes utilisateur:', error);
     }
   };
   
-  // Filtrer les films en fonction de la recherche
-  const filteredMovies = searchQuery
-    ? movies.filter(movie => 
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    : movies;
+  // Gérer la recherche de films
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (searchQuery.trim() === '') {
+        setFilteredMovies(allMovies); // Si la recherche est vide, on affiche tous les films
+        return;
+      }
+
+      // On filtre localement les films déjà chargés pour une recherche instantanée
+      const localResults = allMovies.filter(movie => 
+        movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredMovies(localResults);
+
+      // Optionnel: Vous pourriez aussi lancer une recherche sur l'API pour des résultats plus complets
+      // const apiResults = await searchMovies(searchQuery);
+      // setFilteredMovies(apiResults.map(...)); // formater les résultats de l'API
+    };
+
+    const searchTimeout = setTimeout(() => {
+      handleSearch();
+    }, 300); // On attend 300ms après la saisie pour lancer la recherche (debounce)
+
+    return () => clearTimeout(searchTimeout); // Nettoyage du timeout
+  }, [searchQuery, allMovies]);
   
   // Gérer l'ajout/retrait des favoris
   const toggleFavorite = async (movie) => {
@@ -94,10 +145,14 @@ const HomeScreen = ({ navigation }) => {
       
       if (isFavorite) {
         await removeMovieFromList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie.id);
-        setFavorites(prev => prev.filter(m => m.id !== movie.id));
+        if(Array.isArray(favorites)) {
+          setFavorites(prev => prev.filter(m => m.id !== movie.id));
+        }
       } else {
         await addMovieToList(storageService.STORAGE_KEYS.FAVORITE_MOVIES, movie);
-        setFavorites(prev => [...prev, movie]);
+        if(Array.isArray(favorites)) {
+          setFavorites(prev => [...prev, movie]);
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des favoris:', error);
@@ -111,10 +166,14 @@ const HomeScreen = ({ navigation }) => {
       
       if (isWatched) {
         await removeMovieFromList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie.id);
-        setWatchedMovies(prev => prev.filter(m => m.id !== movie.id));
+        if(Array.isArray(watchedMovies)) {
+            setWatchedMovies(prev => prev.filter(m => m.id !== movie.id));
+        }
       } else {
         await addMovieToList(storageService.STORAGE_KEYS.WATCHED_MOVIES, movie);
-        setWatchedMovies(prev => [...prev, movie]);
+        if(Array.isArray(watchedMovies)) {
+          setWatchedMovies(prev => [...prev, movie]);
+        }
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des films vus:', error);
@@ -122,12 +181,11 @@ const HomeScreen = ({ navigation }) => {
   };
   
   // Naviguer vers les détails du film
-  const goToMovieDetails = (movie) => {
-    navigation.navigate('MovieDetail', { movie });
-  };
+  
 
   // Création des styles dynamiques
-  const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+    // Création des styles dynamiques, recalculés seulement si le thème change
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <ThemedContainer style={[styles.container, { paddingTop: insets.top }]}>
@@ -147,11 +205,11 @@ const HomeScreen = ({ navigation }) => {
       {/* Barre de recherche (conditionnelle) */}
       {searchActive && (
         <View style={styles.searchContainer}>
-          <FontAwesome name="search" size={16} color={isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor} />
+                    <FontAwesome name="search" size={16} color={theme.secondaryTextColor} />
           <TextInput
             style={styles.searchInput}
             placeholder="Rechercher un film..."
-            placeholderTextColor={COLORS.textSecondary}
+                        placeholderTextColor={theme.secondaryTextColor}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
@@ -162,12 +220,12 @@ const HomeScreen = ({ navigation }) => {
       {/* Contenu principal */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+                    <ActivityIndicator size="large" color={'#E91E63'} />
           <Text style={styles.loadingText}>Chargement des films...</Text>
         </View>
       ) : (
         <>
-          {filteredMovies.length > 0 ? (
+          {filteredMovies?.length > 0 ? (
             <FlatList
               data={filteredMovies}
               keyExtractor={(item) => item.id.toString()}
@@ -175,13 +233,13 @@ const HomeScreen = ({ navigation }) => {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.moviesGrid}
               renderItem={({ item }) => {
-                const isFavorite = favorites.some(movie => movie.id === item.id);
-                const isWatched = watchedMovies.some(movie => movie.id === item.id);
-                
+                                const isFavorite = favorites.some(fav => fav.id === item.id);
+                const isWatched = watchedMovies.some(watched => watched.id === item.id);
+               
                 return (
                   <MovieCard
                     movie={item}
-                    onPress={() => goToMovieDetails(item)}
+                    onPress={() => navigation.navigate('MovieDetail', { movieId: item.id, movieTitle: item.title })}
                     onFavoritePress={() => toggleFavorite(item)}
                     onWatchedPress={() => toggleWatched(item)}
                     isFavorite={isFavorite}
@@ -192,7 +250,7 @@ const HomeScreen = ({ navigation }) => {
             />
           ) : (
             <View style={styles.emptyContainer}>
-              <FontAwesome name="film" size={50} color={COLORS.textSecondary} />
+                            <FontAwesome name="film" size={50} color={theme.secondaryTextColor} />
               <Text style={styles.emptyText}>Aucun film trouvé</Text>
             </View>
           )}
@@ -203,7 +261,8 @@ const HomeScreen = ({ navigation }) => {
 };
 
 // Fonction pour créer les styles en fonction du thème
-const createStyles = (theme, isDarkMode) => StyleSheet.create({
+// Fonction pour créer les styles en fonction du thème
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
     // Le backgroundColor est géré par ThemedContainer
@@ -211,7 +270,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDarkMode ? COLORS.card : theme.cardColor,
+        backgroundColor: theme.cardColor,
     borderRadius: SIZES.borderRadius.medium,
     marginHorizontal: SIZES.medium,
     marginVertical: SIZES.small,
@@ -221,7 +280,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: isDarkMode ? COLORS.text : theme.textColor,
+        color: theme.textColor,
     marginLeft: SIZES.small,
     fontSize: SIZES.font.body,
   },
@@ -236,7 +295,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   loadingText: {
     ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     marginTop: SIZES.medium,
   },
   emptyContainer: {
@@ -246,7 +305,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   emptyText: {
     ...FONTS.subtitle,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     marginTop: SIZES.medium,
   },
 });

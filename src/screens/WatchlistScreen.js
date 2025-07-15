@@ -27,8 +27,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import MovieCard from '../components/MovieCard';
 import Header from '../components/Header';
 
-// Styles et utilitaires
-import { COLORS, SIZES, FONTS } from '../utils/theme';
+// Styles et utilitaires (on retire COLORS pour n'utiliser que le thème dynamique)
+import { SIZES, FONTS } from '../utils/theme';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemedContainer from '../components/ThemedContainer';
 
@@ -118,7 +118,7 @@ const WatchlistScreen = ({ navigation }) => {
   // Rendu de l'écran vide si la watchlist est vide
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <FontAwesome name="list" size={70} color={COLORS.textMuted} />
+            <FontAwesome name="list" size={70} color={theme.secondaryTextColor} />
       <Text style={styles.emptyTitle}>Votre liste est vide</Text>
       <Text style={styles.emptySubtitle}>
         Ajoutez des films à votre liste en explorant les films disponibles
@@ -133,7 +133,8 @@ const WatchlistScreen = ({ navigation }) => {
   );
 
   // Création des styles dynamiques
-  const styles = React.useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
+    // Création des styles dynamiques, recalculés seulement si le thème change
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   return (
     <ThemedContainer style={styles.container}>
@@ -141,7 +142,7 @@ const WatchlistScreen = ({ navigation }) => {
       
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+                    <ActivityIndicator size="large" color={'#E91E63'} />
           <Text style={styles.loadingText}>Chargement de votre liste...</Text>
         </View>
       ) : (
@@ -175,7 +176,7 @@ const WatchlistScreen = ({ navigation }) => {
 };
 
 // Fonction pour créer les styles en fonction du thème
-const createStyles = (theme, isDarkMode) => StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
     // Le backgroundColor est géré par ThemedContainer
@@ -187,7 +188,7 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   loadingText: {
     ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     marginTop: SIZES.small,
   },
   moviesGrid: {
@@ -206,26 +207,26 @@ const createStyles = (theme, isDarkMode) => StyleSheet.create({
   },
   emptyTitle: {
     ...FONTS.h2,
-    color: isDarkMode ? COLORS.text : theme.textColor,
+        color: theme.textColor,
     marginTop: SIZES.medium,
     marginBottom: SIZES.small,
     textAlign: 'center',
   },
   emptySubtitle: {
     ...FONTS.body,
-    color: isDarkMode ? COLORS.textSecondary : theme.secondaryTextColor,
+        color: theme.secondaryTextColor,
     textAlign: 'center',
     marginBottom: SIZES.large,
   },
   exploreButton: {
-    backgroundColor: COLORS.primary,
+        backgroundColor: '#E91E63', // Couleur d'accentuation
     paddingHorizontal: SIZES.large,
     paddingVertical: SIZES.medium,
     borderRadius: SIZES.borderRadius.medium,
   },
   exploreButtonText: {
     ...FONTS.subtitle,
-    color: isDarkMode ? COLORS.text : '#FFFFFF',
+        color: '#FFFFFF', // Texte blanc pour un bon contraste
   },
   movieCard: {
     marginBottom: SIZES.medium,

@@ -14,6 +14,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext'; // Importer notre hook de thème
 
 // Import des écrans
 import HomeScreen from '../screens/HomeScreen';
@@ -22,8 +23,8 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import MovieDetailScreen from '../screens/MovieDetailScreen';
 
-// Import du thème
-import { COLORS, SIZES } from '../utils/theme';
+// L'import statique de SIZES est conservé, mais COLORS sera dynamique
+import { SIZES } from '../utils/theme';
 
 // Création des navigateurs
 const Stack = createStackNavigator();
@@ -33,18 +34,20 @@ const Tab = createBottomTabNavigator();
  * TabNavigator - Navigation par onglets pour les écrans principaux
  */
 const TabNavigator = () => {
+  // On récupère le thème dynamique ici
+  const { theme, isDarkMode } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: COLORS.background,
-          borderTopColor: 'rgba(255,255,255,0.1)',
+                tabBarStyle: {
+          backgroundColor: theme.cardColor, // Couleur dynamique
+          borderTopColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0',
           paddingBottom: SIZES.base,
           height: 60,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textSecondary,
+        tabBarActiveTintColor: '#E91E63', // Couleur d'accentuation (peut être statique ou dynamique)
+        tabBarInactiveTintColor: theme.secondaryTextColor, // Couleur dynamique
         tabBarLabelStyle: {
           fontSize: 12,
           marginBottom: 5,
@@ -100,13 +103,15 @@ const TabNavigator = () => {
  * Combine TabNavigator et StackNavigator
  */
 const AppNavigator = () => {
+  // On récupère aussi le thème ici pour le StackNavigator
+  const { theme } = useTheme();
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="MainTabs"
         screenOptions={{
           headerShown: false,
-          cardStyle: { backgroundColor: COLORS.background },
+                    cardStyle: { backgroundColor: theme.backgroundColor }, // Couleur de fond dynamique
         }}
       >
         {/* Navigation par onglets comme écran principal */}
