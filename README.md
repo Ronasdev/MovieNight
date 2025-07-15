@@ -119,19 +119,19 @@ MovieNight est une application mobile moderne et élégante, développée avec R
 
 | Écran d'accueil (Thème Clair) | Écran d'accueil (Thème Sombre) |
 | :---: | :---: |
-| ![Accueil Clair](https://drive.google.com/file/d/1Sqmb5cIPwO3RHQwf27RQggNLhpcLd1um/view?usp=sharing) | ![Accueil Sombre](https://drive.google.com/file/d/10k6qvusEfTe0NngJHVBDA6zkzjlGvMtJ/view?usp=sharing) |
+| ![Accueil Clair](./assets/appScreenImages/HomeScreenClaire.jpeg) | ![Accueil Sombre](./assets/appScreenImages/HomeScreenSombre.jpeg) |
 
 | Détails du Film | Favoris |
 | :---: | :---: |
-| ![Détails](https://drive.google.com/file/d/170mUcedfKrQ1xieDrLq9g0Ht5W5lw3tk/view?usp=sharing) | ![Favoris](https://drive.google.com/file/d/1g78OG1hN0tYU3Me17efIexihwlCd6Dk_/view?usp=sharing) |
+| ![Détails](./assets/appScreenImages/DetailScreenSombrePropre.jpeg) | ![Favoris](./assets/appScreenImages/favoriVideScreenClaire.jpeg) |
 
 | Liste des Films a voir vide | Liste des Films à Voir |
 | :---: | :---: |
-| ![Ecran Vide](https://drive.google.com/file/d/1HDProomMhTtrJOBYxfS9XxgyMO6NWi14/view?usp=sharing) | ![Liste des Films à Voir](https://drive.google.com/file/d/1Sqmb5cIPwO3RHQwf27RQggNLhpcLd1um/view?usp=sharing) |
+| ![Ecran Vide](./assets/appScreenImages/favoriVideScreenClaire.jpeg) | ![Liste des Films à Voir](./assets/appScreenImages/AvoirScreenClaire.jpeg) |
 
 | Profil | Profil: Theme sombre|
 | :---: | :---: |
-| ![Profil](https://drive.google.com/file/d/1I0foXAv3gkTvozzIYkWOEa__KktlDzL6/view?usp=sharing) | ![Profil theme sombre](https://drive.google.com/file/d/1wJ_m9LFV3P-csC4yfJqsT_XTnp73Ld_L/view?usp=sharing) |
+| ![Profil](./assets/appScreenImages/ProfileScreenClaire.jpeg) | ![Profil theme sombre](./assets/appScreenImages/ProfileScreenSombre.jpeg) |
 
 ---
 
