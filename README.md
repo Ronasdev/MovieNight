@@ -123,11 +123,11 @@ MovieNight est une application mobile moderne et élégante, développée avec R
 
 | Détails du Film | Favoris |
 | :---: | :---: |
-| ![Détails](./assets/appScreenImages/DetailScreenSombrePropre.jpeg) | ![Favoris](./assets/appScreenImages/favoriVideScreenClaire.jpeg) |
+| ![Détails](./assets/appScreenImages/DetailScreenSombrePropre.jpeg) | ![Favoris](./assets/appScreenImages/FavoriVideScreenClaire.jpeg) |
 
 | Liste des Films a voir vide | Liste des Films à Voir |
 | :---: | :---: |
-| ![Ecran Vide](./assets/appScreenImages/favoriVideScreenClaire.jpeg) | ![Liste des Films à Voir](./assets/appScreenImages/AvoirScreenClaire.jpeg) |
+| ![Ecran Vide](./assets/appScreenImages/FavoriVideScreenClaire.jpeg) | ![Liste des Films à Voir](./assets/appScreenImages/AvoirScreenClaire.jpeg) |
 
 | Profil | Profil: Theme sombre|
 | :---: | :---: |
